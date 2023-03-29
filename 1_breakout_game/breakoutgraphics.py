@@ -41,12 +41,16 @@ class BreakoutGraphics:
         self.paddle = GRect(PADDLE_WIDTH, PADDLE_HEIGHT,
                             x=(window_width-paddle_width)/2, y=window_height-paddle_offset)
         self.paddle.filled = True
+        self.paddle.color = 'tan'
+        self.paddle.fill_color = 'tan'
         self.window.add(self.paddle)
 
         # Center a filled ball in the graphical window
         self.ball = GOval(BALL_RADIUS*2, BALL_RADIUS*2,
                           x=window_width/2-BALL_RADIUS, y=window_height/2-BALL_RADIUS)
         self.ball.filled = True
+        self.ball.color = 'gray'
+        self.ball.fill_color = 'slategray'
         self.window.add(self.ball)
 
         # Default initial velocity for the ball
@@ -56,32 +60,54 @@ class BreakoutGraphics:
 
         # Initialize our mouse listeners
         self.live = 3
+        self.score = 0
         self.gate = True
         onmousemoved(self.paddle_moving)
         onmouseclicked(self.start_game)
+        text = "Live : " + str(self.live)
+        self.label_live = GLabel(text)
+        self.label_live.font = "SansSerif-22-bold"
+        self.label_live.color = 'lightslategray'
+        self.label_live_x = self.window.width - self.label_live.width - 10
+        self.label_live_y = self.label_live.height*2
+        self.window.add(self.label_live, self.label_live_x, self.label_live_y)
+        text_score = "Score : " + str(self.score)
+        self.label_score = GLabel(text_score)
+        self.label_score.font = "SansSerif-22-bold"
+        self.label_score.color = 'orangered'
+        self.label_score_x = 10
+        self.label_score_y = self.label_score.height * 2
+        self.window.add(self.label_score, self.label_score_x, self.label_score_y)
 
         # Draw bricks
+        # self.color = ['red', 'orange', 'yellow', 'green', 'blue']
+        self.color = ['darkred', 'darksalmon', 'khaki', 'darkseagreen', 'steelblue']
         for i in range(0, BRICK_COLS):
             for j in range(0, BRICK_ROWS):
                 self.brick = GRect(BRICK_WIDTH, BRICK_HEIGHT,
                                    x=i*(BRICK_WIDTH+BRICK_SPACING), y=BRICK_OFFSET+j*(BRICK_HEIGHT+BRICK_SPACING))
                 self.brick.filled = True
-                if j < BRICK_ROWS/5:
-                    self.brick.fill_color = 'red'
-                    self.brick.color = 'red'
-                elif BRICK_ROWS/5 <= j < BRICK_ROWS*2/5:
-                    self.brick.fill_color = 'orange'
-                    self.brick.color = 'orange'
-                elif BRICK_ROWS*2/5 <= j < BRICK_ROWS*3/5:
-                    self.brick.fill_color = 'yellow'
-                    self.brick.color = 'yellow'
-                elif BRICK_ROWS*3/5 <= j < BRICK_ROWS*4/5:
-                    self.brick.fill_color = 'green'
-                    self.brick.color = 'green'
-                elif BRICK_ROWS*4/5 <= j < BRICK_ROWS:
-                    self.brick.fill_color = 'blue'
-                    self.brick.color = 'blue'
+                self.brick.fill_color = self.color[int(j/2 % 5)]
+                self.brick.color = self.color[int(j/2 % 5)]
                 self.window.add(self.brick)
+
+        # Draw hint
+        self.label_start = GLabel("CLICK TO START")
+        self.label_start.font = "SansSerif-36-bold"
+        self.label_start.color = 'yellowgreen'
+        self.label_start_x = (self.window.width - self.label_start.width) / 2
+        self.label_start_y = 1.7 * (self.window.height + self.label_start.ascent) / 3
+        self.window.add(self.label_start, self.label_start_x, self.label_start_y)
+        self.label_end = GLabel("GAME OVER")
+        self.label_end.font = "SansSerif-36-bold"
+        self.label_end.color = 'tomato'
+        self.label_end_x = (self.window.width - self.label_end.width) / 2
+        self.label_end_y = 1.7 * (self.window.height + self.label_end.ascent) / 3
+        self.label_win = GLabel("YOU WIN ^O^/")
+        self.label_win.font = "SansSerif-36-bold"
+        self.label_win.color = 'tomato'
+        self.label_win_x = (self.window.width - self.label_win.width) / 2
+        self.label_win_y = 1.7 * (self.window.height + self.label_win.ascent) / 3
 
     # Control paddle motion and it moving area
     def paddle_moving(self, mouse):
@@ -111,34 +137,45 @@ class BreakoutGraphics:
 
     # Animation loop
     def start_game(self, mouse):
+        if self.gate is True:
+            self.window.remove(self.label_start)
+            self.ball_bouncing()
+        else:
+            pass
+
+    def ball_bouncing(self):
+        # if gate = True, the game can be started by mouse click
+        self.gate = False
+        self.live -= 1
         while True:
-            # if live = 0, game is over
-            if self.live <= 0:
+            # detect if ball touch the wall, and reverse the __dx, __dy to bounce back
+            if self.ball_x_outside():
+                self.__dx = - self.__dx
+            if self.ball_top_outside():
+                self.__dy = - self.__dy
+            if self.ball_bott_outside():
+                self.ball.x = self.window.width / 2 - BALL_RADIUS
+                self.ball.y = self.window.height / 2 - BALL_RADIUS
+                # self.rest_ball_velocity()
+                self.gate = True
+                text = 'Live : ' + str(self.live)
+                self.label_live.text = text
+                # if live = 0, game is over
+                if self.live == 0:
+                    self.gate = False
+                    self.window.add(self.label_end, self.label_end_x, self.label_end_y)
+                else:
+                    self.window.add(self.label_start, self.label_start_x, self.label_start_y)
                 break
-            # if gate = True, the game can be started by mouse click
-            elif self.gate is True:
+            # ball moving by __dx, __dy
+            self.ball.move(self.__dx, self.__dy)
+            # check if ball touches paddle or brick, and take actions
+            self.ball_touch()
+            if self.score == 100:
                 self.gate = False
-                self.live -= 1
-                while True:
-                    # detect if ball touch the wall, and reverse the __dx, __dy to bounce back
-                    if self.ball_x_outside():
-                        self.__dx = - self.__dx
-                    if self.ball_top_outside():
-                        self.__dy = - self.__dy
-                    if self.ball_bott_outside():
-                        self.ball.x = self.window.width / 2 - BALL_RADIUS
-                        self.ball.y = self.window.height / 2 - BALL_RADIUS
-                        self.rest_ball_velocity()
-                        self.gate = True
-                        break
-                    # ball moving by __dx, __dy
-                    self.ball.move(self.__dx, self.__dy)
-                    # check if ball touches paddle or brick, and take actions
-                    self.ball_touch()
-                    pause(10)
-            # if gate = False mean the mouse click during the game, do not execute anything.
-            elif self.gate is False:
-                pass
+                self.window.add(self.label_win, self.label_win_x, self.label_win_y)
+                break
+            pause(13)
 
     # Definition of ball outside
     def ball_x_outside(self):
@@ -163,21 +200,46 @@ class BreakoutGraphics:
         # check the ball is at brick area (brick area : upper than paddle)
         if self.ball.y < self.paddle.y-BALL_RADIUS * 2:
             # if one of coordinate touch the brick, remove the brick
-            if maybe_obj1 is not None:
+            if self.ball.y <= BRICK_OFFSET:
+                self.__dy = - self.__dy
+            elif maybe_obj1 is not None:
                 self.window.remove(maybe_obj1)
+                self.score += 1
+                self.speedup()
                 self.__dy = - self.__dy
             elif maybe_obj2 is not None:
                 self.window.remove(maybe_obj2)
+                self.score += 1
+                self.speedup()
                 self.__dy = - self.__dy
             elif maybe_obj3 is not None:
                 self.window.remove(maybe_obj3)
+                self.score += 1
+                self.speedup()
                 self.__dy = - self.__dy
             elif maybe_obj4 is not None:
                 self.window.remove(maybe_obj4)
+                self.score += 1
+                self.speedup()
                 self.__dy = - self.__dy
+            text_score = "Score : " + str(self.score)
+            self.label_score.text = text_score
         # check the ball is at paddle area, and use the two coordinates at bottom to detect if ball touch paddle
-        elif maybe_obj2 is not None:
+        elif (maybe_obj2 is not None and maybe_obj2 != self.label_live and maybe_obj2 != self.label_score) or \
+                (maybe_obj3 is not None and maybe_obj3 != self.label_live and maybe_obj3 != self.label_score):
             self.__dy = - self.__dy
-        elif maybe_obj3 is not None:
-            self.__dy = - self.__dy
+
+    def speedup(self):
+        if self.score == 5:
+            self.__dx *= 1.1
+            self.__dy *= 1.1
+        elif self.score == 20:
+            self.__dx *= 1.05
+            self.__dy *= 1.05
+        elif self.score == 40:
+            self.__dx *= 1.1
+            self.__dy *= 1.1
+        elif self.score == 80:
+            self.__dx *= 1.1
+            self.__dy *= 1.1
 

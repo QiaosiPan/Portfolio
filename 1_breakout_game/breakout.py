@@ -17,7 +17,6 @@ NUM_LIVES = 3			# Number of attempts
 
 def main():
     graphics = BreakoutGraphics()
-    # Add the animation loop here!
 
 
 if __name__ == '__main__':
