@@ -19,6 +19,7 @@ Demo: https://youtu.be/P0VdQCmqbgE
 ### 4_babyname_rating
 利用data structure整理歷年新生兒命名排名資料，並用GUI介面呈現，  
 可以關鍵字搜尋名字，並用圖表列出歷年排名趨勢圖  
+Demo: https://youtu.be/mtkj5L0JlkU  
 
 ### 5_boggle_game
 輸入任意４＊４的字母矩陣，使用recursive演算法迭代搜尋後，會輸出所有可以組成的單字  
